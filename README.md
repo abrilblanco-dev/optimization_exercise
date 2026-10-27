@@ -2,6 +2,8 @@
 
 **Materia**: Algoritmia y optimizacion.
 
+**Profesor**: Dr. Jose Anastacio Hernandez Saldaña
+
 **Alumno**: Julio Antonio Blanco Rufino.
 
 **Matricula**: 2003632
