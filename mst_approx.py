@@ -46,7 +46,7 @@ def main():
 
     os.makedirs("figures", exist_ok=True)
 
-    # 1) Histograma de razones del MST puro
+    # Histograma de razones del MST puro
     plt.figure(figsize=(7, 5))
     plt.hist(r, bins=15, edgecolor="black", alpha=0.8)
     plt.axvline(2, color="red", linestyle="--", label="Límite teórico = 2")
@@ -60,7 +60,7 @@ def main():
     plt.tight_layout()
     plt.savefig("figures/ex5_histograma.png", dpi=150)
 
-    # 2) Boxplot comparativo
+    # Boxplot comparativo
     plt.figure(figsize=(9, 5))
     plt.boxplot(list(ratios.values()))
     plt.xticks(range(1, len(ratios) + 1), list(ratios.keys()))
