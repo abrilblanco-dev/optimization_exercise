@@ -4,49 +4,45 @@ import statistics
 
 import matplotlib.pyplot as plt
 
-from tsp_utils import (SCHEDULES, dist_matrix, held_karp, mst_tour, nearest_neighbor,
-                       random_points, simulated_annealing, tour_length, two_opt)
+from tsp_utils import (SCHEDULES, mst_prim, nearest_neighbor, optimo_fuerza_bruta, preorder,
+                       simulated_annealing, temperatura_inicial, tour_length, two_opt)
 
 
 def main():
-    rng = random.Random(2026)
+    random.seed(2026)
     n, n_inst = 9, 100
     ratios = {"MST puro": [], "MST + 2-opt": [], "2-opt (desde NN)": [], "Recocido simulado": []}
-    costos = {k: [] for k in ratios}
-    optimos = []
 
     for inst in range(n_inst):
-        D = dist_matrix(random_points(n, rng))
-        opt = held_karp(D)
-        optimos.append(opt)
+        points = [(random.uniform(0, 10), random.uniform(0, 10)) for _ in range(n)]
+        opt = tour_length(points, optimo_fuerza_bruta(points))      # fuerza bruta del profe
 
-        t_mst = mst_tour(D)
-        c_mst = tour_length(D, t_mst)
-        t_mst2, _ = two_opt(D, t_mst)
-        c_mst2 = tour_length(D, t_mst2)
+        mst = preorder(mst_prim(points))                             # aproximación MST (profe)
+        c_mst = tour_length(points, mst)
+        c_mst2 = tour_length(points, two_opt(points, mst)[0])        # MST + 2-opt
 
-        t_nn, _ = two_opt(D, nearest_neighbor(D, rng.randrange(n)))
-        c_ls = tour_length(D, t_nn)
+        nn = nearest_neighbor(points, random.randrange(n))
+        c_ls = tour_length(points, two_opt(points, nn)[0])           # búsqueda local desde NN
 
         t0 = list(range(n))
-        rng.shuffle(t0)
-        T0 = sum(map(sum, D)) / (n * n)
-        c_sa, _, _, _ = simulated_annealing(D, t0, SCHEDULES["Exponencial"], 10_000, T0, seed=inst)
+        random.shuffle(t0)
+        c_sa = simulated_annealing(points, t0, SCHEDULES["Exponencial"], 10_000,
+                                   temperatura_inicial(points), seed=inst)[0]
 
         for k, c in [("MST puro", c_mst), ("MST + 2-opt", c_mst2),
                      ("2-opt (desde NN)", c_ls), ("Recocido simulado", c_sa)]:
-            costos[k].append(c)
             ratios[k].append(c / opt)
 
     r = ratios["MST puro"]
-    print(f"Razón MST puro: media {statistics.mean(r):.3f} | mediana {statistics.median(r):.3f} | máx {max(r):.3f} (límite teórico 2)")
-    print(f"\n{'Método':20s} {'Razón media':>12s} {'Razón máx':>10s} {'% óptimos':>10s}")
+    print(f"Razón MST puro: media {statistics.mean(r):.3f} | mediana {statistics.median(r):.3f} "
+          f"| máx {max(r):.3f} (límite teórico 2)")
+    print(f"\n{'Método':20s} {'Razón media':>12s} {'Mediana':>8s} {'Razón máx':>10s} {'% óptimos':>10s}")
     for k, v in ratios.items():
-        print(f"{k:20s} {statistics.mean(v):12.3f} {max(v):10.3f} {100 * sum(x < 1 + 1e-6 for x in v) / n_inst:9.0f}%")
+        print(f"{k:20s} {statistics.mean(v):12.3f} {statistics.median(v):8.3f} {max(v):10.3f} "
+              f"{100 * sum(x < 1 + 1e-6 for x in v) / n_inst:9.0f}%")
 
     os.makedirs("figures", exist_ok=True)
 
-    # Histograma de razones del MST puro
     plt.figure(figsize=(7, 5))
     plt.hist(r, bins=15, edgecolor="black", alpha=0.8)
     plt.axvline(2, color="red", linestyle="--", label="Límite teórico = 2")
@@ -60,7 +56,6 @@ def main():
     plt.tight_layout()
     plt.savefig("figures/ex5_histograma.png", dpi=150)
 
-    # Boxplot comparativo
     plt.figure(figsize=(9, 5))
     plt.boxplot(list(ratios.values()))
     plt.xticks(range(1, len(ratios) + 1), list(ratios.keys()))

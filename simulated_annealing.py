@@ -4,25 +4,25 @@ import statistics
 
 import matplotlib.pyplot as plt
 
-from tsp_utils import SCHEDULES, dist_matrix, random_points, simulated_annealing
+from tsp_utils import SCHEDULES, simulated_annealing, temperatura_inicial
 
 
 def main():
-    rng = random.Random(11)
+    random.seed(11)
     n = 30
-    D = dist_matrix(random_points(n, rng))
-    T0 = sum(map(sum, D)) / (n * n)      # temperatura inicial ~ distancia media entre ciudades
+    points = [(random.uniform(0, 10), random.uniform(0, 10)) for _ in range(n)]
+    T0 = temperatura_inicial(points)
 
     tour0 = list(range(n))
-    rng.shuffle(tour0)                    # misma solución inicial aleatoria para todos
+    random.shuffle(tour0)                    #misma solución inicial aleatoria para todos
 
     os.makedirs("figures", exist_ok=True)
 
-    # 1) Curvas de convergencia (N fijo, una semilla)
+    #Curvas de convergencia (N fijo, una semilla)
     N = 50_000
     fig, axs = plt.subplots(1, 2, figsize=(13, 5))
     for nombre, sch in SCHEDULES.items():
-        _, _, hist, _ = simulated_annealing(D, tour0, sch, N, T0, seed=0, record_every=100)
+        _, _, hist, _ = simulated_annealing(points, tour0, sch, N, T0, seed=0, record_every=100)
         its = [h[0] for h in hist]
         axs[0].plot(its, [h[2] for h in hist], alpha=0.35)
         axs[0].plot(its, [h[3] for h in hist], label=f"{nombre} (mejor)", linewidth=2)
@@ -42,7 +42,7 @@ def main():
     plt.tight_layout()
     plt.savefig("figures/ex4_convergencia.png", dpi=150)
 
-    # 2) Tiempo vs. calidad final (varios N y semillas)
+    # Tiempo vs calidad final (varios N y semillas)
     Ns = [5_000, 20_000, 50_000]
     semillas = range(5)
     print(f"{'Esquema':14s} {'N':>7s} {'Tiempo medio (s)':>17s} {'Costo final medio':>18s} {'Mejor':>8s}")
@@ -50,7 +50,7 @@ def main():
     for nombre, sch in SCHEDULES.items():
         tiempos, costos = [], []
         for Nit in Ns:
-            res = [simulated_annealing(D, tour0, sch, Nit, T0, seed=s) for s in semillas]
+            res = [simulated_annealing(points, tour0, sch, Nit, T0, seed=s) for s in semillas]
             t_med = statistics.mean(r[3] for r in res)
             c_med = statistics.mean(r[0] for r in res)
             c_min = min(r[0] for r in res)

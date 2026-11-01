@@ -4,37 +4,36 @@ import statistics
 
 import matplotlib.pyplot as plt
 
-from tsp_utils import dist_matrix, nearest_neighbor, random_points, tour_length, two_opt
+from tsp_utils import nearest_neighbor, random_points, tour_length, two_opt
 
 
 def main():
-    rng = random.Random(42)
+    random.seed(42)
+    rng = random
     n_ciudades, n_instancias = 30, 30
     mej_rand, mej_nn, len_rand, len_nn = [], [], [], []
 
     for _ in range(n_instancias):
-        D = dist_matrix(random_points(n_ciudades, rng))
+        points = [(random.uniform(0, 10), random.uniform(0, 10)) for _ in range(n_ciudades)]
 
-        t_rand = list(range(n_ciudades))
-        rng.shuffle(t_rand)
-        t_rand, m = two_opt(D, t_rand)
+        inicio = list(range(n_ciudades))
+        random.shuffle(inicio)                              #solución inicial aleatoria
+        tour, m = two_opt(points, inicio)
         mej_rand.append(m)
-        len_rand.append(tour_length(D, t_rand))
+        len_rand.append(tour_length(points, tour))
 
-        t_nn = nearest_neighbor(D, rng.randrange(n_ciudades))
-        t_nn, m = two_opt(D, t_nn)
+        inicio = nearest_neighbor(points, random.randrange(n_ciudades))   #vecino más cercano
+        tour, m = two_opt(points, inicio)
         mej_nn.append(m)
-        len_nn.append(tour_length(D, t_nn))
+        len_nn.append(tour_length(points, tour))
 
     print(f"Instancias: {n_instancias} | ciudades por instancia: {n_ciudades}")
     print(f"Mejoras  - aleatorio: media {statistics.mean(mej_rand):.1f} (mediana {statistics.median(mej_rand):.0f})")
     print(f"Mejoras  - vecino más cercano: media {statistics.mean(mej_nn):.1f} (mediana {statistics.median(mej_nn):.0f})")
-    print(f"Longitud - aleatorio: media {statistics.mean(len_rand):.1f}")
-    print(f"Longitud - vecino más cercano: media {statistics.mean(len_nn):.1f}")
-    menos = sum(b < a for a, b in zip(mej_rand, mej_nn))
-    mejor = sum(b < a for a, b in zip(len_rand, len_nn))
-    print(f"NN necesitó menos mejoras en {menos}/{n_instancias} instancias")
-    print(f"NN terminó con mejor tour en {mejor}/{n_instancias} instancias")
+    print(f"Longitud - aleatorio: media {statistics.mean(len_rand):.2f} (mediana {statistics.median(len_rand):.2f})")
+    print(f"Longitud - vecino más cercano: media {statistics.mean(len_nn):.2f} (mediana {statistics.median(len_nn):.2f})")
+    print(f"NN necesitó menos mejoras en {sum(b < a for a, b in zip(mej_rand, mej_nn))}/{n_instancias} instancias")
+    print(f"NN terminó con mejor tour en {sum(b < a for a, b in zip(len_rand, len_nn))}/{n_instancias} instancias")
 
     os.makedirs("figures", exist_ok=True)
     etiquetas = ["Inicio aleatorio", "Inicio vecino\nmás cercano"]
